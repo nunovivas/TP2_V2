@@ -19,7 +19,15 @@ class CalculatorApp(UserControl):
         self.result_numeric_value = 0
         self.general_result_text = Text(value="",color = colors.CYAN, size=30, max_lines=2)
         
+        self.popup_menu_button = flet.PopupMenuButton(items=[])  # Initialize with an empty list of items
         
+        # Modify the PopupMenuButton instantiation to include the items attribute
+        popup_menu_row = Row(controls=[self.popup_menu_button])  # Add the PopupMenuButton to a Row
+      
+        def check_item_clicked(e):
+            e.control.checked = not e.control.checked
+            e.control.update()
+            
         # application's root control (i.e. "view") containing all other controls
         return Container(
             width=450,
@@ -30,6 +38,7 @@ class CalculatorApp(UserControl):
                 controls=[
                     Row(controls=[self.general_result_text], alignment="end"),
                     Row(controls=[self.result_text], alignment="end"),
+                    popup_menu_row,
                     Row(
                         controls=[
                              ElevatedButton(
@@ -278,6 +287,9 @@ class CalculatorApp(UserControl):
             ),
         )
 
+    def add_popup_menu_item(self, text, icon=None, on_click=None):
+            new_item = flet.PopupMenuItem(text=text, icon=icon, on_click=on_click)
+            self.popup_menu_button.items.append(new_item)
     def button_clicked(self, e):
         data = e.control.data
         if self.result_numeric_value == "Error" or data == "CE": # apaga só o principal
@@ -292,6 +304,9 @@ class CalculatorApp(UserControl):
         elif data == "<-":
             # Remove the rightmost character
             self.result_numeric_value= str(self.result_numeric_value)[:-1]
+        elif data == "RAND":
+            #add the item do the stack
+            self.add_popup_menu_item("Dynamic Item", on_click=lambda _: print("Dynamic item clicked!"))
         elif data in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."):
             if self.result_numeric_value == "0" or self.new_operand == True:
                 #self.result.value = data # old code
