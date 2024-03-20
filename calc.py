@@ -1,6 +1,8 @@
+from datetime import datetime
 import random
 
 import flet
+import pyperclip
 from flet import (
     Column,
     Container,
@@ -15,6 +17,7 @@ from flet import (
 
 
 class CalculatorApp(UserControl):
+            
     def build(self):
         self.reset()
         self.result_text = Text(value="0", color=colors.WHITE, size=20,)
@@ -22,11 +25,33 @@ class CalculatorApp(UserControl):
         self.general_result_text = Text(value="",color = colors.CYAN, size=30, max_lines=2)
         
         # Initialize with an empty list of items
-        self.popup_menu_button = flet.PopupMenuButton(items=[])
+        self.popup_menu_button = flet.PopupMenuButton(items=[], expand=True,)
         
         # Modify the PopupMenuButton instantiation to include the items attribute
         popup_menu_row = Row(controls=[self.popup_menu_button])  # Add the PopupMenuButton to a Row
+
+        #initialize the dropdown
+        self.dropdown = flet.Dropdown(options=[], color=colors.BLUE_200, focused_bgcolor= colors.YELLOW_300,expand=True)
       
+        dropdown_row = Row(controls = [self.dropdown])
+        dropdown_row_controls = Row([
+                ElevatedButton(
+                                text="REMOVE",
+                                bgcolor=colors.BLUE_GREY_600,
+                                color=colors.BLACK,
+                                expand=1,
+                                on_click=self.button_clicked,
+                                data="RMV",
+                            ),
+                    ElevatedButton(
+                                text="COPY TO CLIPBOARD",
+                                bgcolor=colors.BLUE_GREY_600,
+                                color=colors.BLACK,
+                                expand=1,
+                                on_click=self.button_clicked,
+                                data="CC",
+                            ),
+        ])
             
         # application's root control (i.e. "view") containing all other controls
         return Container(
@@ -38,7 +63,9 @@ class CalculatorApp(UserControl):
                 controls=[
                     Row(controls=[self.general_result_text], alignment="end"),
                     Row(controls=[self.result_text], alignment="end"),
-                    popup_menu_row,
+                    #popup_menu_row,
+                    dropdown_row,
+                    dropdown_row_controls,
                     Row(
                         controls=[
                              ElevatedButton(
@@ -289,24 +316,50 @@ class CalculatorApp(UserControl):
 
 
     def add_popup_menu_item(self, text, on_click=None):
-            # TODO: Só deve adicionar 10
-            # TODO: Deve ter indice
-            # TODO: deve poder apagar?
-            # TODO: deve ter data hora
-            # TODO: Um botão para adicionar à area de transferencia do dispositivo
-            new_item = flet.PopupMenuItem(text=text, icon=flet.icons.SUMMARIZE, on_click=on_click)
+            max_items = 10
+            # TODO: Só deve adicionar 10 e faz pop do mais antigo quando chega a este numero DONE
+            # TODO: Deve ter indice - tem indice, não é é visivel DONE
+            # TODO: deve poder apagar? SEMI DONE
+            # TODO: deve ter data hora DONE
+            # TODO: Um botão para adicionar à area de transferencia do dispositivo DONE
+            current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Get current date and time
+            new_item_text = f"{current_datetime} # {text}"  # Include the current index in the text
+            new_item = flet.PopupMenuItem(text=new_item_text, icon=flet.icons.SUMMARIZE, on_click=on_click)
+            
+            if len(self.popup_menu_button.items) >= max_items:
+                self.popup_menu_button.items.pop(0)  # Remove the oldest item (index 0)
+
             self.popup_menu_button.items.append(new_item)
-            #self.update() # not neeeded?
+            
+            ## do the dropdown
+            self.dropdown.options.append(flet.dropdown.Option(new_item_text))
+            self.dropdown.value = text
+            # como faço o update? não é preciso pois é feito no button_clicked
+            # page.update            
+    
     def button_clicked(self, e):
+            
         def handle_dynamic_item_click(event):
             clicked_item_text = event.control.text
             print("Dynamic item clicked!")
             print (F"The chosen item was:({clicked_item_text})")
+            #copies to the main text
+            self.general_result_text.value= event.control.text
+            self.update()
+            
         # não sei se vou precisar disto... talvez para apagar coisas no futuro?
         def check_item_clicked(e):
             e.control.checked = not e.control.checked
             e.control.update()
             print("check_item_clicked()")
+            
+        def find_option(option_name):
+            for option in self.dropdown.options:
+                if option_name == option.key:
+                    return option
+            return None
+
+            
         data = e.control.data
         if self.result_numeric_value == "Error" or data == "CE": # apaga só o principal
             self.result_numeric_value = "0"
@@ -320,11 +373,28 @@ class CalculatorApp(UserControl):
         elif data == "<-":
             # Remove the rightmost character
             self.result_numeric_value= str(self.result_numeric_value)[:-1]
+        elif data == "RMV":
+            # DOne
+            #remove current item from the dropdown
+            print("Value removed from dropdown")
+            option = find_option(self.dropdown.value)
+            if option != None:
+                self.dropdown.options.remove(option)
+                print(F"Removed!{option.key}")
+                print ("MUST REMOVE FROM localStorage!")
+                # d.value = None
+                #page.update() # not needed
+            
+        elif data == "CC":
+            #copy current RESULT to the device clipboard
+            text_to_copy = self.result_text.value
+            print (F"Copied to clipboard:{text_to_copy}")
+            pyperclip.copy(text_to_copy)
         elif data == "RAND":
             #add the item do the stack
             item_text = F"Random number: {random.random()}"
             self.add_popup_menu_item(item_text, on_click=handle_dynamic_item_click)
-            #self.add_popup_menu_item("Dynamic Item")
+            print ("MUST ADD to localStorage!")
         elif data in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."):
             if self.result_numeric_value == "0" or self.new_operand == True:
                 #self.result.value = data # old code
@@ -371,6 +441,7 @@ class CalculatorApp(UserControl):
         self.result_text.value= self.format_number(self.result_numeric_value)
         print (F"Result text: {self.result_text.value} - Numberic value: {self.result_numeric_value}")
 
+        #estava a dar erro
         self.update()
 
     def format_number(self, num):
