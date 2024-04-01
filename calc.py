@@ -1,5 +1,7 @@
 from datetime import datetime
 import random
+import math
+
 
 import flet
 import pyperclip
@@ -20,7 +22,7 @@ class CalculatorApp(UserControl):
             
     def build(self):
         self.reset()
-        self.result_text = Text(value="0", color=colors.WHITE, size=20,)
+        self.result_text = Text(value="", color=colors.WHITE, size=20,)
         self.result_numeric_value = 0
         self.general_result_text = Text(value="",color = colors.CYAN, size=30, max_lines=2)
         
@@ -85,12 +87,12 @@ class CalculatorApp(UserControl):
                                 data="EXP",
                             ),
                              ElevatedButton(
-                                text="ABS",
+                                text="SQRT",
                                 bgcolor=colors.BLUE_GREY_400,
                                 color=colors.BLACK,
                                 expand=1,
                                 on_click=self.button_clicked,
-                                data="ABS",
+                                data="SQRT",
                             ),
                              ElevatedButton(
                                 text="RAND",
@@ -99,6 +101,14 @@ class CalculatorApp(UserControl):
                                 expand=1,
                                 on_click=self.button_clicked,
                                 data="RAND",
+                            ),
+                             ElevatedButton(
+                                text="TESTE",
+                                bgcolor=colors.BLUE_GREY_400,
+                                color=colors.BLACK,
+                                expand=1,
+                                on_click=self.button_clicked,
+                                data="TESTE",
                             ),
                         ],
                     ),
@@ -362,14 +372,35 @@ class CalculatorApp(UserControl):
             
         data = e.control.data
         if self.result_numeric_value == "Error" or data == "CE": # apaga só o principal
-            self.result_numeric_value = "0"
-            self.result_text.value="0"
+            self.result_numeric_value = ""
+            self.result_text.value=""
             self.reset()
         elif data == "AC": # apaga tudo
-            self.result_numeric_value = "0"
-            self.result_text.value="0"
-            self.general_result_text.value="0"
+            self.result_numeric_value = ""
+            self.result_text.value=""
+            self.general_result_text.value=""
             self.reset()
+        elif data =="LOG":
+            self.result_numeric_value = "LOG(" + str(self.result_numeric_value)
+            self.result_text.value= self.result_numeric_value
+            self.update()
+        elif data =="EXP":
+            self.result_numeric_value = "EXP(" + str(self.result_numeric_value)
+            self.result_text.value= self.result_numeric_value
+            self.update()
+        elif data =="SQRT":
+            self.result_numeric_value = "SQRT(" + str(self.result_numeric_value) 
+            self.result_text.value= self.result_numeric_value
+            self.update()
+        elif data == "(": #adiciona parentesis
+            self.result_numeric_value = "(" + str(self.result_numeric_value) 
+            self.result_text.value= self.result_numeric_value
+            self.update()
+        elif data == ")": #adiciona parentesis
+            self.result_numeric_value = str(self.result_numeric_value) + ")"
+            self.result_text.value= self.result_numeric_value
+            self.update()
+            
         elif data == "<-":
             # Remove the rightmost character
             self.result_numeric_value= str(self.result_numeric_value)[:-1]
@@ -391,52 +422,104 @@ class CalculatorApp(UserControl):
             print (F"Copied to clipboard:{text_to_copy}")
             pyperclip.copy(text_to_copy)
         elif data == "RAND":
+            random_number = random.random()
+            self.result_numeric_value = random_number
+        elif data == "TESTE":
             #add the item do the stack
             item_text = F"Random number: {random.random()}"
             self.add_popup_menu_item(item_text, on_click=handle_dynamic_item_click)
             print ("MUST ADD to localStorage!")
         elif data in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."):
-            if self.result_numeric_value == "0" or self.new_operand == True:
-                #self.result.value = data # old code
-                self.result_numeric_value= data
-                self.new_operand = False
-            else:
-                self.result_numeric_value = self.result_numeric_value + data
+            #Old code
+            # if self.result_numeric_value == "0" or self.new_operand == True:
+            #     #self.result.value = data # old code
+            #     self.result_numeric_value= data
+            #     self.new_operand = False
+            # else:
+            #     self.result_numeric_value = self.result_numeric_value + data
+            
+            #new code
+            if (self.result_numeric_value==0):
+                self.result_numeric_value = data
+            else :
+                self.result_numeric_value = str(self.result_numeric_value) + data
+            
 
         elif data in ("+", "-", "*", "/"):
-            precalc_value = self.result_numeric_value
-            self.result_numeric_value = self.calculate(
-                self.operand1, float(self.result_numeric_value), self.operator
-            )
-            self.operator = data
-            if self.result_numeric_value == "Error":
-                self.operand1 = "0"
-            else:
-                # adiciona o operador à caixa maior
-                self.general_result_text.value=self.general_result_text.value + str(precalc_value) + str(self.operator)
-                #codigo antigo, sem mudanças
-                # self.operand1 = float(self.result.value)  
-                self.operand1 = self.result_numeric_value  
-            self.new_operand = True
+            # Old code
+            # precalc_value = self.result_numeric_value
+            # self.result_numeric_value = self.calculate(
+            #     self.operand1, float(self.result_numeric_value), self.operator
+            # )
+            # self.operator = data
+            # if self.result_numeric_value == "Error":
+            #     self.operand1 = "0"
+            # else:
+            #     # adiciona o operador à caixa maior
+            #     self.general_result_text.value=self.general_result_text.value + str(precalc_value) + str(self.operator)
+            #     #codigo antigo, sem mudanças
+            #     # self.operand1 = float(self.result.value)  
+            #     self.operand1 = self.result_numeric_value  
+            # self.new_operand = True
+            self.general_result_text.value= str(self.general_result_text.value) + str(self.result_numeric_value) + str(data)
+            self.result_numeric_value=""
+            ##NOTAS:
+            # eleiminar new_operand?
+            # usar data?
+            
 
         elif data in ("="):
-            self.result_numeric_value = self.calculate(
-                self.operand1, float(self.result_numeric_value), self.operator
-            )
-            self.reset()
+            # Old Code
+            # self.result_numeric_value = self.calculate(
+            #     self.operand1, float(self.result_numeric_value), self.operator
+            # )
+            # self.reset()
+            
+            #New Code
+       
+            try:
+                # first copy the current value
+                self.general_result_text.value= str(self.general_result_text.value) + str(self.result_numeric_value)
+
+                # Then evaluate the expression
+                expression = self.general_result_text.value
+                # do the replacements
+                # For LOG
+                expression = expression.replace("LOG", "math.log")
+                # For LOG
+                expression = expression.replace("SQRT", "math.sqrt")
+                # For EXP
+                expression = expression.replace("EXP", "math.exp")
+              
+                # end replacements
+                evaluation = eval(expression)
+                self.general_result_text.value = evaluation
+                # clears the input
+                self.result_numeric_value=""
+            except Exception as e:
+                print (F"Error: {e}")
+                self.result_numeric_value = "Error in expression"
+                self.reset()
+       
 
         elif data in ("%"):
             self.result_numeric_value = float(self.result_numeric_value) / 100
             self.reset()
 
         elif data in ("+/-"):
-            if float(self.result_numeric_value) > 0:
-                self.result_numeric_value = "-" + str(self.result_numeric_value)
+            #Aqui simplesmente adiciona o sinal de menos que é o que está a fazer
+            # tem é que deixar de dar erro
+            try:
+                if float(self.result_numeric_value) > 0:
+                    self.result_numeric_value = "-" + str(self.result_numeric_value)
 
-            elif float(self.result_numeric_value) < 0:
-                self.result_numeric_value = str(
-                    self.format_number(abs(float(self.result_numeric_value)))
-                )
+                elif float(self.result_numeric_value) < 0:
+                    self.result_numeric_value = str(
+                        self.format_number(abs(float(self.result_numeric_value)))
+                    )
+            except Exception as e:
+                print ("Erro inverting signal")
+                self.result_numeric_value = "Error"
         #formata numero antes de fazer update
         self.result_text.value= self.format_number(self.result_numeric_value)
         print (F"Result text: {self.result_text.value} - Numberic value: {self.result_numeric_value}")
@@ -447,16 +530,21 @@ class CalculatorApp(UserControl):
     def format_number(self, num):
     #esta função está aqui para tirar o .0 dos resultados que são todos doubles.
         # Remove spaces from the string
-        if num=='' : num =0
-        number_string_without_spaces = str(num).replace(" ", "")
-        # convert it back to number
-        number_string_without_spaces = float(number_string_without_spaces)
-        if number_string_without_spaces % 1 == 0: # removes the .0
-            number_string_without_spaces= int(number_string_without_spaces)
-        formatted_number = "{:,}".format(number_string_without_spaces).replace(",", " ")
-        print(formatted_number)
+        try:
+            
+            #if num=='' : num =0 # nao preciso dos leading zeros
+            num = str(float(num))
+            number_string_without_spaces = str(num).replace(" ", "")
+            # convert it back to number
+            number_string_without_spaces = float(number_string_without_spaces)
+            if number_string_without_spaces % 1 == 0: # removes the .0
+                number_string_without_spaces= int(number_string_without_spaces)
+            formatted_number = "{:,}".format(number_string_without_spaces).replace(",", " ")
+            print(formatted_number)
 
-        return formatted_number
+            return formatted_number
+        except Exception as e:
+            return num
   
     def calculate(self, operand1, operand2, operator):
 
@@ -482,6 +570,7 @@ class CalculatorApp(UserControl):
         self.new_operand = True        
 
 def main(page: Page):
+    print("change something")
     page.title = "Calc App"
 
     # create application instance
