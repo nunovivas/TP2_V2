@@ -46,18 +46,26 @@ class CalculatorApp(UserControl):
                                 data="RMV",
                             ),
                     ElevatedButton(
-                                text="COPY TO CLIPBOARD",
+                                text="COPY TO CLIP",
                                 bgcolor=colors.BLUE_GREY_600,
                                 color=colors.BLACK,
                                 expand=1,
                                 on_click=self.button_clicked,
                                 data="CC",
                             ),
+                      ElevatedButton(
+                                text="COPY HISTORIC",
+                                bgcolor=colors.BLUE_GREY_600,
+                                color=colors.BLACK,
+                                expand=1,
+                                on_click=self.button_clicked,
+                                data="CH",
+                            ),
         ])
             
         # application's root control (i.e. "view") containing all other controls
         return Container(
-            width=450,
+            width=550,
             bgcolor=colors.BLACK,
             border_radius=border_radius.all(20),
             padding=20,
@@ -95,20 +103,20 @@ class CalculatorApp(UserControl):
                                 data="SQRT",
                             ),
                              ElevatedButton(
-                                text="RAND",
+                                text="RNG",
                                 bgcolor=colors.BLUE_GREY_400,
                                 color=colors.BLACK,
                                 expand=1,
                                 on_click=self.button_clicked,
-                                data="RAND",
+                                data="RNG",
                             ),
                              ElevatedButton(
-                                text="TESTE",
+                                text="SAV",
                                 bgcolor=colors.BLUE_GREY_400,
                                 color=colors.BLACK,
                                 expand=1,
                                 on_click=self.button_clicked,
-                                data="TESTE",
+                                data="SAV",
                             ),
                         ],
                     ),
@@ -329,19 +337,23 @@ class CalculatorApp(UserControl):
             max_items = 10
             # TODO: Só deve adicionar 10 e faz pop do mais antigo quando chega a este numero DONE
             # TODO: Deve ter indice - tem indice, não é é visivel DONE
-            # TODO: deve poder apagar? SEMI DONE
+            # TODO: deve poder apagar? DONE
             # TODO: deve ter data hora DONE
             # TODO: Um botão para adicionar à area de transferencia do dispositivo DONE
             current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Get current date and time
             new_item_text = f"{current_datetime} # {text}"  # Include the current index in the text
-            new_item = flet.PopupMenuItem(text=new_item_text, icon=flet.icons.SUMMARIZE, on_click=on_click)
             
-            if len(self.popup_menu_button.items) >= max_items:
-                self.popup_menu_button.items.pop(0)  # Remove the oldest item (index 0)
+            #Old Code
+            # new_item = flet.PopupMenuItem(text=new_item_text, icon=flet.icons.SUMMARIZE, on_click=on_click)
+            
+            # if len(self.popup_menu_button.items) >= max_items:
+            #     self.popup_menu_button.items.pop(0)  # Remove the oldest item (index 0)
 
-            self.popup_menu_button.items.append(new_item)
+            # self.popup_menu_button.items.append(new_item)
             
             ## do the dropdown
+            if (len(self.dropdown.options) >= 10):
+                self.dropdown.options.pop(0)
             self.dropdown.options.append(flet.dropdown.Option(new_item_text))
             self.dropdown.value = text
             # como faço o update? não é preciso pois é feito no button_clicked
@@ -418,15 +430,25 @@ class CalculatorApp(UserControl):
             
         elif data == "CC":
             #copy current RESULT to the device clipboard
-            text_to_copy = self.result_text.value
+            text_to_copy = self.general_result_text.value
             print (F"Copied to clipboard:{text_to_copy}")
             pyperclip.copy(text_to_copy)
-        elif data == "RAND":
+        elif data == "CH":
+            try:
+                str_to_copy = str(self.dropdown.value)
+                index = str_to_copy.find('#')  # Find the index of '#'
+                if index != -1:  # If '#' is found
+                    self.general_result_text.value = str_to_copy[index + 1:]  # Extract all characters to the right of '#'
+
+            except Exception as e:
+                print ("Error copying from historic")
+        elif data == "RNG":
             random_number = random.random()
             self.result_numeric_value = random_number
-        elif data == "TESTE":
+        elif data == "SAV":
             #add the item do the stack
-            item_text = F"Random number: {random.random()}"
+            #item_text = F"Random number: {random.random()}"
+            item_text = self.general_result_text.value
             self.add_popup_menu_item(item_text, on_click=handle_dynamic_item_click)
             print ("MUST ADD to localStorage!")
         elif data in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."):
@@ -496,6 +518,10 @@ class CalculatorApp(UserControl):
                 self.general_result_text.value = evaluation
                 # clears the input
                 self.result_numeric_value=""
+                # saves to the history
+                self.add_popup_menu_item(expression, on_click=handle_dynamic_item_click)
+                print ("MUST ADD to localStorage!")
+                
             except Exception as e:
                 print (F"Error: {e}")
                 self.result_numeric_value = "Error in expression"
