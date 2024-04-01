@@ -54,7 +54,7 @@ class CalculatorApp(UserControl):
                                 data="CC",
                             ),
                       ElevatedButton(
-                                text="COPY HISTORIC",
+                                text="FROM HISTORIC",
                                 bgcolor=colors.BLUE_GREY_600,
                                 color=colors.BLACK,
                                 expand=1,
@@ -332,7 +332,16 @@ class CalculatorApp(UserControl):
             ),
         )
 
-
+    def updateStorage(self):
+        try:
+            self.page.client_storage.clear() #clears and then rebuilds it
+            i=0
+            for option in self.dropdown.options:
+                i+=1
+                self.page.client_storage.set(f"CALCULATORAPP.{i}", str(option.key))
+                print (F"Added to localStorage:{option.key}")
+        except Exception as e:
+            print("Error saving to localStorage")
     def add_popup_menu_item(self, text, on_click=None):
             max_items = 10
             # TODO: Só deve adicionar 10 e faz pop do mais antigo quando chega a este numero DONE
@@ -368,12 +377,6 @@ class CalculatorApp(UserControl):
             #copies to the main text
             self.general_result_text.value= event.control.text
             self.update()
-            
-        # não sei se vou precisar disto... talvez para apagar coisas no futuro?
-        def check_item_clicked(e):
-            e.control.checked = not e.control.checked
-            e.control.update()
-            print("check_item_clicked()")
             
         def find_option(option_name):
             for option in self.dropdown.options:
@@ -425,6 +428,7 @@ class CalculatorApp(UserControl):
                 self.dropdown.options.remove(option)
                 print(F"Removed!{option.key}")
                 print ("MUST REMOVE FROM localStorage!")
+                self.updateStorage()
                 # d.value = None
                 #page.update() # not needed
             
@@ -518,10 +522,10 @@ class CalculatorApp(UserControl):
                 self.general_result_text.value = evaluation
                 # clears the input
                 self.result_numeric_value=""
-                # saves to the history
+                # saves to historic
                 self.add_popup_menu_item(expression, on_click=handle_dynamic_item_click)
                 print ("MUST ADD to localStorage!")
-                
+                self.updateStorage()
             except Exception as e:
                 print (F"Error: {e}")
                 self.result_numeric_value = "Error in expression"
@@ -596,15 +600,26 @@ class CalculatorApp(UserControl):
         self.new_operand = True        
 
 def main(page: Page):
-    print("change something")
-    page.title = "Calc App"
+    def add_presaved_tasks(calculatorApp):
+        # Adding default tasks
+        #default_tasks = ["Task 1", "Task 2"]
+        print("Loading presaved tasks...")
+        storage_calculations =  page.client_storage.get_keys("CALCULATORAPP.")
+        if storage_calculations is not None and len(storage_calculations)>0:
+            for calculation in storage_calculations:
+                calculation_value = page.client_storage.get(calculation)
+                # adds to historic
+                calculatorApp.dropdown.options.append(flet.dropdown.Option(calculation_value))
+                print (f"Loaded : ${calculation_value}")
+            calculatorApp.update()
 
+    page.title = "Calc App"
     # create application instance
     calc = CalculatorApp()
-
     # add application's root control to the page
     page.add(calc)
 
-
+    add_presaved_tasks(calc)
+   
 #flet.app(target=main)
 flet.app(target=main, port=8080, view=flet.WEB_BROWSER)
