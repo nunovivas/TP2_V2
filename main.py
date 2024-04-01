@@ -622,4 +622,4 @@ def main(page: Page):
     add_presaved_tasks(calc)
    
 #flet.app(target=main)
-flet.app(target=main, port=8080, view=flet.WEB_BROWSER)
+flet.app(target=main,assets_dir="assets", port=8080, view=flet.WEB_BROWSER)
